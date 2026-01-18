@@ -211,11 +211,12 @@ def parse_tick_line(line: str) -> Tuple[dt.datetime, float, float, float, float]
     date_str, time_str, payload = line.strip().split(maxsplit=2)
     frac_and_rest = payload.split(";")
     frac = frac_and_rest[0]
+    frac_micro = frac[:6].ljust(6, "0")
     last = float(frac_and_rest[1])
     bid = float(frac_and_rest[2])
     ask = float(frac_and_rest[3])
     volume = float(frac_and_rest[4])
-    timestamp = dt.datetime.strptime(f"{date_str} {time_str}{frac}", "%Y%m%d %H%M%S%f")
+    timestamp = dt.datetime.strptime(f"{date_str} {time_str}{frac_micro}", "%Y%m%d %H%M%S%f")
     return timestamp, last, bid, ask, volume
 
 
@@ -581,6 +582,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Online ML burst strategy backtest")
     parser.add_argument("--data", default="NQdata.txt", help="Path to tick data file")
     parser.add_argument("--out", default="outputs", help="Output directory")
+    parser.add_argument("--skip-sensitivity", action="store_true", help="Skip sensitivity sweep")
     args = parser.parse_args()
 
     params = Params()
@@ -590,15 +592,16 @@ def main() -> None:
     for key, value in base_metrics.items():
         print(f"  {key}: {value}")
 
-    sensitivity = run_sensitivity(args.data, params, args.out)
-    print("Sensitivity sweep (for diagnostics only):")
-    os.makedirs(args.out, exist_ok=True)
-    with open(os.path.join(args.out, "sensitivity.csv"), "w", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(sensitivity[0].keys()))
-        writer.writeheader()
-        for row in sensitivity:
-            writer.writerow(row)
-            print(row)
+    if not args.skip_sensitivity:
+        sensitivity = run_sensitivity(args.data, params, args.out)
+        print("Sensitivity sweep (for diagnostics only):")
+        os.makedirs(args.out, exist_ok=True)
+        with open(os.path.join(args.out, "sensitivity.csv"), "w", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(sensitivity[0].keys()))
+            writer.writeheader()
+            for row in sensitivity:
+                writer.writerow(row)
+                print(row)
 
 
 if __name__ == "__main__":

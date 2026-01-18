@@ -130,6 +130,8 @@ If both stop and target are hit inside the same bar, the stop is taken first (co
 
 ```
 python backtest_online_burst.py --data NQdata.txt --out outputs
+# To skip the sensitivity sweep:
+python backtest_online_burst.py --data NQdata.txt --out outputs --skip-sensitivity
 ```
 
 ## Parameter defaults
